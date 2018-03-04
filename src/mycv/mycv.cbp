@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="mycv" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/mycv" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add directory="../../../../../Downloads/opencv/binaries/install/include/opencv" />
+					<Add directory="../../../../../Downloads/opencv/binaries/install/include" />
+					<Add directory="../../../../../Downloads/opencv/binaries/install/include/opencv2" />
+				</Compiler>
+				<Linker>
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_calib3d340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_core340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_dnn340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_features2d340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_flann340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_highgui340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_imgcodecs340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_imgproc340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_ml340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_objdetect340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_photo340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_shape340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_stitching340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_superres340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_video340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_videoio340.dll.a" />
+					<Add library="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib/libopencv_videostab340.dll.a" />
+					<Add directory="../../../../../Downloads/opencv/binaries/install/x64/mingw/lib" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/mycv" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fexceptions" />
+		</Compiler>
+		<Unit filename="main.cpp" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
