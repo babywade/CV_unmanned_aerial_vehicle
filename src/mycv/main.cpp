@@ -1,63 +1,147 @@
 //-----------------------------------【程序说明】----------------------------------------------
-//  程序名称:：【OpenCV入门教程之三】图像的载入，显示与输出 一站式完全解析 博文配套源码
+//  程序名称:：【OpenCV入门教程之四】分离颜色通道&多通道图像混合   配套源码
 // VS2010版   OpenCV版本：2.4.8
-//      2014年3月5日 Create by 浅墨
-//  描述： 图像的载入，显示与输出 一站式剖析   配套源码
-//  图片素材出处：dota2原画圣堂刺客 dota2 logo  动漫人物
+//     2014年3月13 日 Create by 浅墨
+//  图片素材出处：dota2原画 dota2logo
+//     浅墨的微博：@浅墨_毛星云
 //------------------------------------------------------------------------------------------------
 
-
+//-----------------------------------【头文件包含部分】---------------------------------------
+//     描述：包含程序所依赖的头文件
+//----------------------------------------------------------------------------------------------
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <iostream>
 
+//-----------------------------------【命名空间声明部分】---------------------------------------
+//     描述：包含程序所使用的命名空间
+//-----------------------------------------------------------------------------------------------
 using namespace cv;
+using namespace std;
 
 
-int main( )
+//-----------------------------------【全局函数声明部分】--------------------------------------
+//     描述：全局函数声明
+//-----------------------------------------------------------------------------------------------
+bool MultiChannelBlending();
+
+//-----------------------------------【main( )函数】--------------------------------------------
+//     描述：控制台应用程序的入口函数，我们的程序从这里开始
+//-----------------------------------------------------------------------------------------------
+int main(  )
 {
-//-----------------------------------【一、图像的载入和显示】--------------------------------------
-//     描述：以下三行代码用于完成图像的载入和显示
-//--------------------------------------------------------------------------------------------------
+       system("color5E");
 
-Mat girl=imread("girl.jpg"); //载入图像到Mat
-namedWindow("【1】动漫图"); //创建一个名为 "【1】动漫图"的窗口
-imshow("【1】动漫图",girl);//显示名为 "【1】动漫图"的窗口
+       if(MultiChannelBlending())
+       {
+              cout<<endl<<"嗯。好了，得出了你需要的混合值图像~";
+       }
 
-//-----------------------------------【二、初级图像混合】--------------------------------------
-//     描述：二、初级图像混合
+       cvWaitKey(0);
+       return 0;
+}
+
+
+//-----------------------------【MultiChannelBlending( )函数】--------------------------------
+//     描述：多通道混合的实现函数
 //-----------------------------------------------------------------------------------------------
-//载入图片
-Mat image= imread("dota.jpg");
-Mat logo= imread("dota_logo.jpg");
+bool MultiChannelBlending()
+{
+       //【0】定义相关变量
+       Mat srcImage;
+       Mat logoImage;
+       vector<Mat>channels;
+       Mat imageBlueChannel;
 
-//载入后先显示
-namedWindow("【2】原画图");
-imshow("【2】原画图",image);
+       //=================【蓝色通道部分】=================
+       //     描述：多通道混合-蓝色分量部分
+       //============================================
 
-namedWindow("【3】logo图");
-imshow("【3】logo图",logo);
+       //【1】读入图片
+       logoImage=imread("dota_logo.jpg",0);
+       srcImage=imread("dota.jpg");
 
-//定义一个Mat类型，用于存放，图像的ROI
-Mat imageROI;
-//方法一
-//imageROI=image(Rect(800,350,logo.cols,logo.rows));
-//方法二
-imageROI=image(Range(350,350+logo.rows),Range(800,800+logo.cols));
+       if(!logoImage.data ) { printf("Oh，no，读取logoImage错误~！\n"); return false; }
+       if(!srcImage.data ) { printf("Oh，no，读取srcImage错误~！\n"); return false; }
 
-//将logo加到原图上
-addWeighted(imageROI,0.5,logo,0.3,0.,imageROI);
+       //【2】把一个3通道图像转换成3个单通道图像
+       split(srcImage,channels);//分离色彩通道
 
-//显示结果
-namedWindow("【4】原画+logo图");
-imshow("【4】原画+logo图",image);
+       //【3】将原图的蓝色通道引用返回给imageBlueChannel，注意是引用，相当于两者等价，修改其中一个另一个跟着变
+       imageBlueChannel=channels.at(0);
+       //【4】将原图的蓝色通道的（500,250）坐标处右下方的一块区域和logo图进行加权操作，将得到的混合结果存到imageBlueChannel中
+       addWeighted(imageBlueChannel(Rect(500,250,logoImage.cols,logoImage.rows)),1.0,
+              logoImage,0.5,0,imageBlueChannel(Rect(500,250,logoImage.cols,logoImage.rows)));
 
-//-----------------------------------【三、图像的输出】--------------------------------------
-//     描述：将一个Mat图像输出到图像文件
-//-----------------------------------------------------------------------------------------------
-//输出一张jpg图片到工程目录下
-imwrite("我喜欢打dota2 by浅墨.jpg",image);
+       //【5】将三个单通道重新合并成一个三通道
+       merge(channels,srcImage);
 
-waitKey();
+       //【6】显示效果图
+       namedWindow("<1>游戏原画+logo蓝色通道 by浅墨");
+       imshow("<1>游戏原画+logo蓝色通道 by浅墨",srcImage);
 
-return 0;
+
+       //=================【绿色通道部分】=================
+       //     描述：多通道混合-绿色分量部分
+       //============================================
+
+       //【0】定义相关变量
+       Mat imageGreenChannel;
+
+       //【1】重新读入图片
+       logoImage=imread("dota_logo.jpg",0);
+       srcImage=imread("dota.jpg");
+
+       if(!logoImage.data ) { printf("Oh，no，读取logoImage错误~！\n"); return false; }
+       if(!srcImage.data ) { printf("Oh，no，读取srcImage错误~！\n"); return false; }
+
+       //【2】将一个三通道图像转换成三个单通道图像
+       split(srcImage,channels);//分离色彩通道
+
+       //【3】将原图的绿色通道的引用返回给imageBlueChannel，注意是引用，相当于两者等价，修改其中一个另一个跟着变
+       imageGreenChannel=channels.at(1);
+       //【4】将原图的绿色通道的（500,250）坐标处右下方的一块区域和logo图进行加权操作，将得到的混合结果存到imageGreenChannel中
+       addWeighted(imageGreenChannel(Rect(500,250,logoImage.cols,logoImage.rows)),1.0,
+              logoImage,0.5,0.,imageGreenChannel(Rect(500,250,logoImage.cols,logoImage.rows)));
+
+       //【5】将三个独立的单通道重新合并成一个三通道
+       merge(channels,srcImage);
+
+       //【6】显示效果图
+       namedWindow("<2>游戏原画+logo绿色通道 by浅墨");
+       imshow("<2>游戏原画+logo绿色通道 by浅墨",srcImage);
+
+
+
+       //=================【红色通道部分】=================
+       //     描述：多通道混合-红色分量部分
+       //============================================
+
+       //【0】定义相关变量
+       Mat imageRedChannel;
+
+       //【1】重新读入图片
+       logoImage=imread("dota_logo.jpg",0);
+       srcImage=imread("dota.jpg");
+
+       if(!logoImage.data ) { printf("Oh，no，读取logoImage错误~！\n"); return false; }
+       if(!srcImage.data ) { printf("Oh，no，读取srcImage错误~！\n"); return false; }
+
+       //【2】将一个三通道图像转换成三个单通道图像
+       split(srcImage,channels);//分离色彩通道
+
+       //【3】将原图的红色通道引用返回给imageBlueChannel，注意是引用，相当于两者等价，修改其中一个另一个跟着变
+       imageRedChannel=channels.at(2);
+       //【4】将原图的红色通道的（500,250）坐标处右下方的一块区域和logo图进行加权操作，将得到的混合结果存到imageRedChannel中
+       addWeighted(imageRedChannel(Rect(500,250,logoImage.cols,logoImage.rows)),1.0,
+              logoImage,0.5,0.,imageRedChannel(Rect(500,250,logoImage.cols,logoImage.rows)));
+
+       //【5】将三个独立的单通道重新合并成一个三通道
+       merge(channels,srcImage);
+
+       //【6】显示效果图
+       namedWindow("<3>游戏原画+logo红色通道 by浅墨");
+       imshow("<3>游戏原画+logo红色通道 by浅墨",srcImage);
+
+       return true;
 }
