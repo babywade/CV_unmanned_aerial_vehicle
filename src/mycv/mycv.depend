@@ -1,10 +1,8 @@
 # depslib dependency file v1.0
-1520254278 source:c:\users\babywade\documents\github\cv_unmanned_aerial_vehicle\src\mycv\main.cpp
-	<iostream>
-	<opencv2\core\core.hpp>
-	<opencv2\highgui\highgui.hpp>
-	<opencv2\imgproc\imgproc.hpp>
-	<opencv2\opencv.hpp>
+1520341504 source:c:\users\babywade\documents\github\cv_unmanned_aerial_vehicle\src\mycv\main.cpp
+	"opencv2/core/core.hpp"
+	"opencv2/highgui/highgui.hpp"
+	"opencv2/imgproc/imgproc.hpp"
 
 1513621526 c:\users\babywade\downloads\opencv\build\include\opencv\cv.h
 	"opencv2/core/core_c.h"
