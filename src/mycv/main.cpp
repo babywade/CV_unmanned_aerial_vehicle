@@ -1,14 +1,15 @@
 //-----------------------------------【程序说明】----------------------------------------------
-//            程序名称:：《【OpenCV入门教程之九】非线性滤波专场：中值滤波、双边滤波  》 博文配套源码
+//            程序名称:：《【OpenCV入门教程之十】形态学图像处理（一）：膨胀与腐蚀  》 博文配套源码
 //            开发所用IDE版本：Visual Studio 2010
 //          开发所用OpenCV版本： 2.4.8
-//            2014年4月8日 Create by 浅墨
+//            2014年4月14日 Create by 浅墨
+//            浅墨的微博：@浅墨_毛星云
 //------------------------------------------------------------------------------------------------
 
 //-----------------------------------【头文件包含部分】---------------------------------------
 //            描述：包含程序所依赖的头文件
 //----------------------------------------------------------------------------------------------
-#include <opencv2/core/core.hpp>
+#include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
@@ -23,150 +24,93 @@ using namespace cv;
 //-----------------------------------【全局变量声明部分】--------------------------------------
 //            描述：全局变量声明
 //-----------------------------------------------------------------------------------------------
-Mat g_srcImage,g_dstImage1,g_dstImage2,g_dstImage3,g_dstImage4,g_dstImage5;
-int g_nBoxFilterValue=6;  //方框滤波内核值
-int g_nMeanBlurValue=10;  //均值滤波内核值
-int g_nGaussianBlurValue=6;  //高斯滤波内核值
-int g_nMedianBlurValue=10;  //中值滤波参数值
-int g_nBilateralFilterValue=10;  //双边滤波参数值
+Mat g_srcImage, g_dstImage;//原始图和效果图
+int g_nTrackbarNumer = 0;//0表示腐蚀erode, 1表示膨胀dilate
+int g_nStructElementSize = 3; //结构元素(内核矩阵)的尺寸
 
 
 //-----------------------------------【全局函数声明部分】--------------------------------------
 //            描述：全局函数声明
 //-----------------------------------------------------------------------------------------------
-//轨迹条回调函数
-static void on_BoxFilter(int, void *);            //方框滤波
-static void on_MeanBlur(int, void *);           //均值块滤波器
-static void on_GaussianBlur(int, void *);                    //高斯滤波器
-static void on_MedianBlur(int, void *);               //中值滤波器
-static void on_BilateralFilter(int, void*);                    //双边滤波器
-
+void Process();//膨胀和腐蚀的处理函数
+void on_TrackbarNumChange(int, void *);//回调函数
+void on_ElementSizeChange(int, void *);//回调函数
 
 
 //-----------------------------------【main( )函数】--------------------------------------------
 //            描述：控制台应用程序的入口函数，我们的程序从这里开始
 //-----------------------------------------------------------------------------------------------
-int main(  )
+int main( )
 {
-       system("color 5E");
+       //改变console字体颜色
+       system("color5E");
 
        //载入原图
-       g_srcImage= imread( "1.jpg", 1 );
+       g_srcImage= imread("1.jpg");
        if(!g_srcImage.data ) { printf("Oh，no，读取srcImage错误~！\n"); return false; }
 
-       //克隆原图到四个Mat类型中
-       g_dstImage1= g_srcImage.clone( );
-       g_dstImage2= g_srcImage.clone( );
-       g_dstImage3= g_srcImage.clone( );
-       g_dstImage4= g_srcImage.clone( );
-       g_dstImage5= g_srcImage.clone( );
+       //显示原始图
+       namedWindow("【原始图】");
+       imshow("【原始图】", g_srcImage);
 
-       //显示原图
-       namedWindow("【<0>原图窗口】", 1);
-       imshow("【<0>原图窗口】",g_srcImage);
+       //进行初次腐蚀操作并显示效果图
+       namedWindow("【效果图】");
+       //获取自定义核
+       Mat element = getStructuringElement(MORPH_RECT, Size(2*g_nStructElementSize+1,2*g_nStructElementSize+1),Point( g_nStructElementSize, g_nStructElementSize ));
+       erode(g_srcImage,g_dstImage, element);
+       imshow("【效果图】", g_dstImage);
 
-
-       //=================【<1>方框滤波】=========================
-       //创建窗口
-       namedWindow("【<1>方框滤波】", 1);
        //创建轨迹条
-       createTrackbar("内核值：", "【<1>方框滤波】",&g_nBoxFilterValue, 50,on_BoxFilter );
-       on_MeanBlur(g_nBoxFilterValue,0);
-       imshow("【<1>方框滤波】", g_dstImage1);
-       //=====================================================
-
-
-       //=================【<2>均值滤波】==========================
-       //创建窗口
-       namedWindow("【<2>均值滤波】", 1);
-       //创建轨迹条
-       createTrackbar("内核值：", "【<2>均值滤波】",&g_nMeanBlurValue, 50,on_MeanBlur );
-       on_MeanBlur(g_nMeanBlurValue,0);
-       //======================================================
-
-
-       //=================【<3>高斯滤波】===========================
-       //创建窗口
-       namedWindow("【<3>高斯滤波】", 1);
-       //创建轨迹条
-       createTrackbar("内核值：", "【<3>高斯滤波】",&g_nGaussianBlurValue, 50,on_GaussianBlur );
-       on_GaussianBlur(g_nGaussianBlurValue,0);
-       //=======================================================
-
-
-       //=================【<4>中值滤波】===========================
-       //创建窗口
-       namedWindow("【<4>中值滤波】", 1);
-       //创建轨迹条
-       createTrackbar("参数值：", "【<4>中值滤波】",&g_nMedianBlurValue, 50,on_MedianBlur );
-       on_MedianBlur(g_nMedianBlurValue,0);
-       //=======================================================
-
-
-       //=================【<5>双边滤波】===========================
-       //创建窗口
-       namedWindow("【<5>双边滤波】", 1);
-       //创建轨迹条
-       createTrackbar("参数值：", "【<5>双边滤波】",&g_nBilateralFilterValue, 50,on_BilateralFilter);
-       on_BilateralFilter(g_nBilateralFilterValue,0);
-       //=======================================================
-
+       createTrackbar("腐蚀/膨胀", "【效果图】", &g_nTrackbarNumer, 1, on_TrackbarNumChange);
+       createTrackbar("内核尺寸", "【效果图】",&g_nStructElementSize, 21, on_ElementSizeChange);
 
        //输出一些帮助信息
-       cout<<endl<<"\t嗯。好了，请调整滚动条观察图像效果~\n\n"
+       cout<<endl<<"\t嗯。运行成功，请调整滚动条观察图像效果~\n\n"
               <<"\t按下“q”键时，程序退出~!\n"
               <<"\n\n\t\t\t\tby浅墨";
+
+       //轮询获取按键信息，若下q键，程序退出
        while(char(waitKey(1))!= 'q') {}
 
        return 0;
 }
 
-//-----------------------------【on_BoxFilter( )函数】------------------------------------
-//            描述：方框滤波操作的回调函数
-//-----------------------------------------------------------------------------------------------
-static void on_BoxFilter(int, void *)
+//-----------------------------【Process( )函数】------------------------------------
+//            描述：进行自定义的腐蚀和膨胀操作
+//-----------------------------------------------------------------------------------------
+void Process()
 {
-       //方框滤波操作
-       boxFilter(g_srcImage, g_dstImage1, -1,Size( g_nBoxFilterValue+1, g_nBoxFilterValue+1));
-       //显示窗口
-       imshow("【<1>方框滤波】", g_dstImage1);
-}
+       //获取自定义核
+       Mat element = getStructuringElement(MORPH_RECT, Size(2*g_nStructElementSize+1,2*g_nStructElementSize+1),Point( g_nStructElementSize, g_nStructElementSize ));
 
-//-----------------------------【on_MeanBlur( )函数】------------------------------------
-//            描述：均值滤波操作的回调函数
-//-----------------------------------------------------------------------------------------------
-static void on_MeanBlur(int, void *)
-{
-       blur(g_srcImage, g_dstImage2, Size( g_nMeanBlurValue+1, g_nMeanBlurValue+1),Point(-1,-1));
-       imshow("【<2>均值滤波】", g_dstImage2);
+       //进行腐蚀或膨胀操作
+       if(g_nTrackbarNumer== 0) {
+              erode(g_srcImage,g_dstImage, element);
+       }
+       else{
+              dilate(g_srcImage,g_dstImage, element);
+       }
 
-}
-
-//-----------------------------【on_GaussianBlur( )函数】------------------------------------
-//            描述：高斯滤波操作的回调函数
-//-----------------------------------------------------------------------------------------------
-static void on_GaussianBlur(int, void *)
-{
-       GaussianBlur(g_srcImage, g_dstImage3, Size( g_nGaussianBlurValue*2+1,g_nGaussianBlurValue*2+1 ), 0, 0);
-       imshow("【<3>高斯滤波】", g_dstImage3);
+       //显示效果图
+       imshow("【效果图】", g_dstImage);
 }
 
 
-//-----------------------------【on_MedianBlur( )函数】------------------------------------
-//            描述：中值滤波操作的回调函数
-//-----------------------------------------------------------------------------------------------
-static void on_MedianBlur(int, void *)
+//-----------------------------【on_TrackbarNumChange( )函数】------------------------------------
+//            描述：腐蚀和膨胀之间切换开关的回调函数
+//-----------------------------------------------------------------------------------------------------
+void on_TrackbarNumChange(int, void *)
 {
-       medianBlur( g_srcImage, g_dstImage4, g_nMedianBlurValue*2+1 );
-       imshow("【<4>中值滤波】", g_dstImage4);
+       //腐蚀和膨胀之间效果已经切换，回调函数体内需调用一次Process函数，使改变后的效果立即生效并显示出来
+       Process();
 }
 
 
-//-----------------------------【on_BilateralFilter( )函数】------------------------------------
-//            描述：双边滤波操作的回调函数
-//-----------------------------------------------------------------------------------------------
-static void on_BilateralFilter(int, void *)
+//-----------------------------【on_ElementSizeChange( )函数】-------------------------------------
+//            描述：腐蚀和膨胀操作内核改变时的回调函数
+//-----------------------------------------------------------------------------------------------------
+void on_ElementSizeChange(int, void *)
 {
-       bilateralFilter( g_srcImage, g_dstImage5, g_nBilateralFilterValue, g_nBilateralFilterValue*2,g_nBilateralFilterValue/2 );
-       imshow("【<5>双边滤波】", g_dstImage5);
+       //内核尺寸已改变，回调函数体内需调用一次Process函数，使改变后的效果立即生效并显示出来
+       Process();
 }
