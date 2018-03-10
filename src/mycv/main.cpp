@@ -1,101 +1,40 @@
 //-----------------------------------【程序说明】----------------------------------------------
-//      程序名称:：《【OpenCV入门教程之十二】OpenCV边缘检测：Canny算子,Sobel算子,Laplace算子,Scharr滤波器合辑合辑》 博文配套源码
+//      程序名称:：《 【OpenCV入门教程之十三】OpenCV图像金字塔：高斯金字塔、拉普拉斯金字塔与图片尺寸缩放》 博文配套源码
 //      开发所用IDE版本：Visual Studio 2010
-//      <span style="white-space:pre;"> </span>开发所用OpenCV版本：    2.4.9
-//      2014年5月11日 Create by 浅墨
-//      浅墨的微博：@浅墨_毛星云 http://weibo.com/1723155442/profile?topnav=1&wvr=5&user=1
-//      浅墨的知乎：http://www.zhihu.com/people/mao-xing-yun
-//      浅墨的豆瓣：http://www.douban.com/people/53426472/
+//              开发所用OpenCV版本：   2.4.9
+//      2014年5月18日 Create by 浅墨
 //----------------------------------------------------------------------------------------------
-
-
 
 //-----------------------------------【头文件包含部分】---------------------------------------
 //      描述：包含程序所依赖的头文件
 //----------------------------------------------------------------------------------------------
+#include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+
+//-----------------------------------【宏定义部分】--------------------------------------------
+//  描述：定义一些辅助宏
+//------------------------------------------------------------------------------------------------
+#define WINDOW_NAME "【程序窗口】"        //为窗口标题定义的宏
+
 
 //-----------------------------------【命名空间声明部分】--------------------------------------
 //      描述：包含程序所使用的命名空间
 //-----------------------------------------------------------------------------------------------
+using namespace std;
 using namespace cv;
 
 
 //-----------------------------------【全局变量声明部分】--------------------------------------
 //      描述：全局变量声明
 //-----------------------------------------------------------------------------------------------
-//原图，原图的灰度版，目标图
-Mat g_srcImage, g_srcGrayImage,g_dstImage;
-
-//Canny边缘检测相关变量
-Mat g_cannyDetectedEdges;
-int g_cannyLowThreshold=1;//TrackBar位置参数
-
-//Sobel边缘检测相关变量
-Mat g_sobelGradient_X, g_sobelGradient_Y;
-Mat g_sobelAbsGradient_X, g_sobelAbsGradient_Y;
-int g_sobelKernelSize=1;//TrackBar位置参数
-
-//Scharr滤波器相关变量
-Mat g_scharrGradient_X, g_scharrGradient_Y;
-Mat g_scharrAbsGradient_X, g_scharrAbsGradient_Y;
+Mat g_srcImage, g_dstImage, g_tmpImage;
 
 
 //-----------------------------------【全局函数声明部分】--------------------------------------
 //      描述：全局函数声明
 //-----------------------------------------------------------------------------------------------
-static void ShowHelpText( );
-static void on_Canny(int, void*);//Canny边缘检测窗口滚动条的回调函数
-static void on_Sobel(int, void*);//Sobel边缘检测窗口滚动条的回调函数
-void Scharr( );//封装了Scharr边缘检测相关代码的函数
-
-
-//-----------------------------------【main( )函数】--------------------------------------------
-//      描述：控制台应用程序的入口函数，我们的程序从这里开始
-//-----------------------------------------------------------------------------------------------
-int main( int argc, char** argv )
-{
-    //改变console字体颜色
-    system("color 2F");
-
-    //显示欢迎语
-    ShowHelpText();
-
-    //载入原图
-    g_srcImage = imread("1.jpg");
-    if( !g_srcImage.data ) { printf("Oh，no，读取srcImage错误~！ \n"); return false; }
-
-    //显示原始图
-    namedWindow("【原始图】");
-    imshow("【原始图】", g_srcImage);
-
-    // 创建与src同类型和大小的矩阵(dst)
-    g_dstImage.create( g_srcImage.size(), g_srcImage.type() );
-
-    // 将原图像转换为灰度图像
-    cvtColor( g_srcImage, g_srcGrayImage, CV_BGR2GRAY );
-
-    // 创建显示窗口
-    namedWindow( "【效果图】Canny边缘检测", CV_WINDOW_AUTOSIZE );
-    namedWindow( "【效果图】Sobel边缘检测", CV_WINDOW_AUTOSIZE );
-
-    // 创建trackbar
-    createTrackbar( "参数值：", "【效果图】Canny边缘检测", &g_cannyLowThreshold, 120, on_Canny );
-    createTrackbar( "参数值：", "【效果图】Sobel边缘检测", &g_sobelKernelSize, 3, on_Sobel );
-
-    // 调用回调函数
-    on_Canny(0, 0);
-    on_Sobel(0, 0);
-
-    //调用封装了Scharr边缘检测代码的函数
-    Scharr( );
-
-    //轮询获取按键信息，若按下Q，程序退出
-    while((char(waitKey(1)) != 'q')) {}
-
-    return 0;
-}
+static void ShowHelpText();
 
 
 //-----------------------------------【ShowHelpText( )函数】----------------------------------
@@ -104,73 +43,107 @@ int main( int argc, char** argv )
 static void ShowHelpText()
 {
     //输出一些帮助信息
-    printf( "\n\n\t嗯。运行成功，请调整滚动条观察图像效果~\n\n"
-        "\t按下“q”键时，程序退出~!\n"
-        "\n\n\t\t\t\t by浅墨" );
+    printf("\n\n\n\t欢迎来到OpenCV图像金字塔和resize示例程序~\n\n");
+    printf( "\n\n\t按键操作说明: \n\n"
+        "\t\t键盘按键【ESC】或者【Q】- 退出程序\n"
+        "\t\t键盘按键【1】或者【W】- 进行基于【resize】函数的图片放大\n"
+        "\t\t键盘按键【2】或者【S】- 进行基于【resize】函数的图片缩小\n"
+        "\t\t键盘按键【3】或者【A】- 进行基于【pyrUp】函数的图片放大\n"
+        "\t\t键盘按键【4】或者【D】- 进行基于【pyrDown】函数的图片缩小\n"
+        "\n\n\t\t\t\t\t\t\t\t by浅墨\n\n\n"
+        );
 }
 
-
-//-----------------------------------【on_Canny( )函数】----------------------------------
-//      描述：Canny边缘检测窗口滚动条的回调函数
+//-----------------------------------【main( )函数】--------------------------------------------
+//      描述：控制台应用程序的入口函数，我们的程序从这里开始
 //-----------------------------------------------------------------------------------------------
-void on_Canny(int, void*)
+int main( )
 {
-    // 先使用 3x3内核来降噪
-    blur( g_srcGrayImage, g_cannyDetectedEdges, Size(3,3) );
+    //改变console字体颜色
+    system("color 2F");
 
-    // 运行我们的Canny算子
-    Canny( g_cannyDetectedEdges, g_cannyDetectedEdges, g_cannyLowThreshold, g_cannyLowThreshold*3, 3 );
+    //显示帮助文字
+    ShowHelpText();
 
-    //先将g_dstImage内的所有元素设置为0
-    g_dstImage = Scalar::all(0);
+    //载入原图
+    g_srcImage = imread("1.jpg");//工程目录下需要有一张名为1.jpg的测试图像，且其尺寸需被2的N次方整除，N为可以缩放的次数
+    if( !g_srcImage.data ) { printf("Oh，no，读取srcImage错误~！ \n"); return false; }
 
-    //使用Canny算子输出的边缘图g_cannyDetectedEdges作为掩码，来将原图g_srcImage拷到目标图g_dstImage中
-    g_srcImage.copyTo( g_dstImage, g_cannyDetectedEdges);
+    // 创建显示窗口
+    namedWindow( WINDOW_NAME, CV_WINDOW_AUTOSIZE );
+    imshow(WINDOW_NAME, g_srcImage);
 
-    //显示效果图
-    imshow( "【效果图】Canny边缘检测", g_dstImage );
-}
+    //参数赋值
+    g_tmpImage = g_srcImage;
+    g_dstImage = g_tmpImage;
 
+     int key =0;
 
+    //轮询获取按键信息
+    while(1)
+    {
+        key=waitKey(9) ;//读取键值到key变量中
 
-//-----------------------------------【on_Sobel( )函数】----------------------------------
-//      描述：Sobel边缘检测窗口滚动条的回调函数
-//-----------------------------------------------------------------------------------------
-void on_Sobel(int, void*)
-{
-    // 求 X方向梯度
-    Sobel( g_srcImage, g_sobelGradient_X, CV_16S, 1, 0, (2*g_sobelKernelSize+1), 1, 1, BORDER_DEFAULT );
-    convertScaleAbs( g_sobelGradient_X, g_sobelAbsGradient_X );//计算绝对值，并将结果转换成8位
+        //根据key变量的值，进行不同的操作
+        switch(key)
+        {
+         //======================【程序退出相关键值处理】=======================
+        case 27://按键ESC
+            return 0;
+            break;
 
-    // 求Y方向梯度
-    Sobel( g_srcImage, g_sobelGradient_Y, CV_16S, 0, 1, (2*g_sobelKernelSize+1), 1, 1, BORDER_DEFAULT );
-    convertScaleAbs( g_sobelGradient_Y, g_sobelAbsGradient_Y );//计算绝对值，并将结果转换成8位
+        case 'q'://按键Q
+            return 0;
+            break;
 
-    // 合并梯度
-    addWeighted( g_sobelAbsGradient_X, 0.5, g_sobelAbsGradient_Y, 0.5, 0, g_dstImage );
+         //======================【图片放大相关键值处理】=======================
+        case 'a'://按键A按下，调用pyrUp函数
+            pyrUp( g_tmpImage, g_dstImage, Size( g_tmpImage.cols*2, g_tmpImage.rows*2 ) );
+            printf( ">检测到按键【A】被按下，开始进行基于【pyrUp】函数的图片放大：图片尺寸×2 \n" );
+            break;
 
-    //显示效果图
-    imshow("【效果图】Sobel边缘检测", g_dstImage);
+        case 'w'://按键W按下，调用resize函数
+            resize(g_tmpImage,g_dstImage,Size( g_tmpImage.cols*2, g_tmpImage.rows*2 ));
+            printf( ">检测到按键【W】被按下，开始进行基于【resize】函数的图片放大：图片尺寸×2 \n" );
+            break;
 
-}
+        case '1'://按键1按下，调用resize函数
+            resize(g_tmpImage,g_dstImage,Size( g_tmpImage.cols*2, g_tmpImage.rows*2 ));
+            printf( ">检测到按键【1】被按下，开始进行基于【resize】函数的图片放大：图片尺寸×2 \n" );
+            break;
 
+        case '3': //按键3按下，调用pyrUp函数
+            pyrUp( g_tmpImage, g_dstImage, Size( g_tmpImage.cols*2, g_tmpImage.rows*2 ));
+            printf( ">检测到按键【3】被按下，开始进行基于【pyrUp】函数的图片放大：图片尺寸×2 \n" );
+            break;
+        //======================【图片缩小相关键值处理】=======================
+        case 'd': //按键D按下，调用pyrDown函数
+            pyrDown( g_tmpImage, g_dstImage, Size( g_tmpImage.cols/2, g_tmpImage.rows/2 ));
+            printf( ">检测到按键【D】被按下，开始进行基于【pyrDown】函数的图片缩小：图片尺寸/2\n" );
+            break;
 
-//-----------------------------------【Scharr( )函数】----------------------------------
-//      描述：封装了Scharr边缘检测相关代码的函数
-//-----------------------------------------------------------------------------------------
-void Scharr( )
-{
-    // 求 X方向梯度
-    Scharr( g_srcImage, g_scharrGradient_X, CV_16S, 1, 0, 1, 0, BORDER_DEFAULT );
-    convertScaleAbs( g_scharrGradient_X, g_scharrAbsGradient_X );//计算绝对值，并将结果转换成8位
+        case  's' : //按键S按下，调用resize函数
+            resize(g_tmpImage,g_dstImage,Size( g_tmpImage.cols/2, g_tmpImage.rows/2 ));
+            printf( ">检测到按键【S】被按下，开始进行基于【resize】函数的图片缩小：图片尺寸/2\n" );
+            break;
 
-    // 求Y方向梯度
-    Scharr( g_srcImage, g_scharrGradient_Y, CV_16S, 0, 1, 1, 0, BORDER_DEFAULT );
-    convertScaleAbs( g_scharrGradient_Y, g_scharrAbsGradient_Y );//计算绝对值，并将结果转换成8位
+        case '2'://按键2按下，调用resize函数
+            resize(g_tmpImage,g_dstImage,Size( g_tmpImage.cols/2, g_tmpImage.rows/2 ),(0,0),(0,0),2);
+            printf( ">检测到按键【2】被按下，开始进行基于【resize】函数的图片缩小：图片尺寸/2\n" );
+            break;
 
-    // 合并梯度
-    addWeighted( g_scharrAbsGradient_X, 0.5, g_scharrAbsGradient_Y, 0.5, 0, g_dstImage );
+        case '4': //按键4按下，调用pyrDown函数
+            pyrDown( g_tmpImage, g_dstImage, Size( g_tmpImage.cols/2, g_tmpImage.rows/2 ) );
+            printf( ">检测到按键【4】被按下，开始进行基于【pyrDown】函数的图片缩小：图片尺寸/2\n" );
+            break;
+        }
 
-    //显示效果图
-    imshow("【效果图】Scharr滤波器", g_dstImage);
+        //经过操作后，显示变化后的图
+        imshow( WINDOW_NAME, g_dstImage );
+
+        //将g_dstImage赋给g_tmpImage，方便下一次循环
+        g_tmpImage = g_dstImage;
+    }
+
+    return 0;
 }
