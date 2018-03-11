@@ -1,8 +1,8 @@
 //-----------------------------------【程序说明】----------------------------------------------
-//      程序名称:：《 【OpenCV入门教程之十三】OpenCV图像金字塔：高斯金字塔、拉普拉斯金字塔与图片尺寸缩放》 博文配套源码
+//      程序名称:：《【OpenCV入门教程之十四】OpenCV霍夫变换：霍夫线变换，霍夫圆变换合辑 》 博文配套源码
 //      开发所用IDE版本：Visual Studio 2010
-//              开发所用OpenCV版本：   2.4.9
-//      2014年5月18日 Create by 浅墨
+//          开发所用OpenCV版本：   2.4.9
+//      2014年5月26日 Created by 浅墨
 //----------------------------------------------------------------------------------------------
 
 //-----------------------------------【头文件包含部分】---------------------------------------
@@ -11,12 +11,6 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
-//-----------------------------------【宏定义部分】--------------------------------------------
-//  描述：定义一些辅助宏
-//------------------------------------------------------------------------------------------------
-#define WINDOW_NAME "【程序窗口】"        //为窗口标题定义的宏
-
 
 //-----------------------------------【命名空间声明部分】--------------------------------------
 //      描述：包含程序所使用的命名空间
@@ -28,31 +22,18 @@ using namespace cv;
 //-----------------------------------【全局变量声明部分】--------------------------------------
 //      描述：全局变量声明
 //-----------------------------------------------------------------------------------------------
-Mat g_srcImage, g_dstImage, g_tmpImage;
-
+Mat g_srcImage, g_dstImage,g_midImage;//原始图、中间图和效果图
+vector<Vec4i> g_lines;//定义一个矢量结构g_lines用于存放得到的线段矢量集合
+//变量接收的TrackBar位置参数
+int g_nthreshold=100;
 
 //-----------------------------------【全局函数声明部分】--------------------------------------
 //      描述：全局函数声明
 //-----------------------------------------------------------------------------------------------
+
+static void on_HoughLines(int, void*);//回调函数
 static void ShowHelpText();
 
-
-//-----------------------------------【ShowHelpText( )函数】----------------------------------
-//      描述：输出一些帮助信息
-//----------------------------------------------------------------------------------------------
-static void ShowHelpText()
-{
-    //输出一些帮助信息
-    printf("\n\n\n\t欢迎来到OpenCV图像金字塔和resize示例程序~\n\n");
-    printf( "\n\n\t按键操作说明: \n\n"
-        "\t\t键盘按键【ESC】或者【Q】- 退出程序\n"
-        "\t\t键盘按键【1】或者【W】- 进行基于【resize】函数的图片放大\n"
-        "\t\t键盘按键【2】或者【S】- 进行基于【resize】函数的图片缩小\n"
-        "\t\t键盘按键【3】或者【A】- 进行基于【pyrUp】函数的图片放大\n"
-        "\t\t键盘按键【4】或者【D】- 进行基于【pyrDown】函数的图片缩小\n"
-        "\n\n\t\t\t\t\t\t\t\t by浅墨\n\n\n"
-        );
-}
 
 //-----------------------------------【main( )函数】--------------------------------------------
 //      描述：控制台应用程序的入口函数，我们的程序从这里开始
@@ -60,90 +41,69 @@ static void ShowHelpText()
 int main( )
 {
     //改变console字体颜色
-    system("color 2F");
+    system("color 3F");
 
-    //显示帮助文字
     ShowHelpText();
 
-    //载入原图
-    g_srcImage = imread("1.jpg");//工程目录下需要有一张名为1.jpg的测试图像，且其尺寸需被2的N次方整除，N为可以缩放的次数
-    if( !g_srcImage.data ) { printf("Oh，no，读取srcImage错误~！ \n"); return false; }
+    //载入原始图和Mat变量定义
+    Mat g_srcImage = imread("ShuDianXian2.jpg");  //工程目录下应该有一张名为1.jpg的素材图
 
-    // 创建显示窗口
-    namedWindow( WINDOW_NAME, CV_WINDOW_AUTOSIZE );
-    imshow(WINDOW_NAME, g_srcImage);
+    //显示原始图
+    imshow("【原始图】", g_srcImage);
 
-    //参数赋值
-    g_tmpImage = g_srcImage;
-    g_dstImage = g_tmpImage;
+    //创建滚动条
+    namedWindow("【效果图】",1);
+    createTrackbar("值", "【效果图】",&g_nthreshold,200,on_HoughLines);
 
-     int key =0;
+    //进行边缘检测和转化为灰度图
+    Canny(g_srcImage, g_midImage, 50, 200, 3);//进行一次canny边缘检测
+    cvtColor(g_midImage,g_dstImage, CV_GRAY2BGR);//转化边缘检测后的图为灰度图
 
-    //轮询获取按键信息
-    while(1)
-    {
-        key=waitKey(9) ;//读取键值到key变量中
+    //调用一次回调函数，调用一次HoughLinesP函数
+    on_HoughLines(g_nthreshold,0);
+    HoughLinesP(g_midImage, g_lines, 1, CV_PI/180, 80, 50, 10 );
 
-        //根据key变量的值，进行不同的操作
-        switch(key)
-        {
-         //======================【程序退出相关键值处理】=======================
-        case 27://按键ESC
-            return 0;
-            break;
+    //显示效果图
+    imshow("【效果图】", g_dstImage);
 
-        case 'q'://按键Q
-            return 0;
-            break;
 
-         //======================【图片放大相关键值处理】=======================
-        case 'a'://按键A按下，调用pyrUp函数
-            pyrUp( g_tmpImage, g_dstImage, Size( g_tmpImage.cols*2, g_tmpImage.rows*2 ) );
-            printf( ">检测到按键【A】被按下，开始进行基于【pyrUp】函数的图片放大：图片尺寸×2 \n" );
-            break;
-
-        case 'w'://按键W按下，调用resize函数
-            resize(g_tmpImage,g_dstImage,Size( g_tmpImage.cols*2, g_tmpImage.rows*2 ));
-            printf( ">检测到按键【W】被按下，开始进行基于【resize】函数的图片放大：图片尺寸×2 \n" );
-            break;
-
-        case '1'://按键1按下，调用resize函数
-            resize(g_tmpImage,g_dstImage,Size( g_tmpImage.cols*2, g_tmpImage.rows*2 ));
-            printf( ">检测到按键【1】被按下，开始进行基于【resize】函数的图片放大：图片尺寸×2 \n" );
-            break;
-
-        case '3': //按键3按下，调用pyrUp函数
-            pyrUp( g_tmpImage, g_dstImage, Size( g_tmpImage.cols*2, g_tmpImage.rows*2 ));
-            printf( ">检测到按键【3】被按下，开始进行基于【pyrUp】函数的图片放大：图片尺寸×2 \n" );
-            break;
-        //======================【图片缩小相关键值处理】=======================
-        case 'd': //按键D按下，调用pyrDown函数
-            pyrDown( g_tmpImage, g_dstImage, Size( g_tmpImage.cols/2, g_tmpImage.rows/2 ));
-            printf( ">检测到按键【D】被按下，开始进行基于【pyrDown】函数的图片缩小：图片尺寸/2\n" );
-            break;
-
-        case  's' : //按键S按下，调用resize函数
-            resize(g_tmpImage,g_dstImage,Size( g_tmpImage.cols/2, g_tmpImage.rows/2 ));
-            printf( ">检测到按键【S】被按下，开始进行基于【resize】函数的图片缩小：图片尺寸/2\n" );
-            break;
-
-        case '2'://按键2按下，调用resize函数
-            resize(g_tmpImage,g_dstImage,Size( g_tmpImage.cols/2, g_tmpImage.rows/2 ),(0,0),(0,0),2);
-            printf( ">检测到按键【2】被按下，开始进行基于【resize】函数的图片缩小：图片尺寸/2\n" );
-            break;
-
-        case '4': //按键4按下，调用pyrDown函数
-            pyrDown( g_tmpImage, g_dstImage, Size( g_tmpImage.cols/2, g_tmpImage.rows/2 ) );
-            printf( ">检测到按键【4】被按下，开始进行基于【pyrDown】函数的图片缩小：图片尺寸/2\n" );
-            break;
-        }
-
-        //经过操作后，显示变化后的图
-        imshow( WINDOW_NAME, g_dstImage );
-
-        //将g_dstImage赋给g_tmpImage，方便下一次循环
-        g_tmpImage = g_dstImage;
-    }
+    waitKey(0);
 
     return 0;
+
+}
+
+
+//-----------------------------------【on_HoughLines( )函数】--------------------------------
+//      描述：【顶帽运算/黑帽运算】窗口的回调函数
+//----------------------------------------------------------------------------------------------
+static void on_HoughLines(int, void*)
+{
+    //定义局部变量储存全局变量
+     Mat dstImage=g_dstImage.clone();
+     Mat midImage=g_midImage.clone();
+
+     //调用HoughLinesP函数
+     vector<Vec4i> mylines;
+    HoughLinesP(midImage, mylines, 1, CV_PI/180, g_nthreshold+1, 50, 10 );
+
+    //循环遍历绘制每一条线段
+    for( size_t i = 0; i < mylines.size(); i++ )
+    {
+        Vec4i l = mylines[i];
+        line( dstImage, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(23,180,55), 1, CV_AA);
+    }
+    //显示图像
+    imshow("【效果图】",dstImage);
+}
+
+//-----------------------------------【ShowHelpText( )函数】----------------------------------
+//      描述：输出一些帮助信息
+//----------------------------------------------------------------------------------------------
+static void ShowHelpText()
+{
+    //输出一些帮助信息
+    printf("\n\n\n\t请调整滚动条观察图像效果~\n\n");
+    printf("\n\n\t\t\t\t\t\t\t\t by浅墨"
+        );
 }
