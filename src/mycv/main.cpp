@@ -1,100 +1,117 @@
 //-----------------------------------【程序说明】----------------------------------------------
-//      程序名称:：《【OpenCV入门教程之十四】OpenCV霍夫变换：霍夫线变换，霍夫圆变换合辑 》 博文配套源码
+//      程序名称:：《【OpenCV入门教程之十六】OpenCV角点检测之Harris角点检测》 博文配套源码
 //      开发所用IDE版本：Visual Studio 2010
-//          开发所用OpenCV版本：   2.4.9
-//      2014年5月26日 Created by 浅墨
+//      开发所用OpenCV版本：   2.4.9
+//      2014年6月8日 Created by 浅墨
+//      浅墨的微博：@浅墨_毛星云 http://weibo.com/1723155442
+//      浅墨的知乎：http://www.zhihu.com/people/mao-xing-yun
+//      浅墨的豆瓣：http://www.douban.com/people/53426472/
 //----------------------------------------------------------------------------------------------
 
 //-----------------------------------【头文件包含部分】---------------------------------------
 //      描述：包含程序所依赖的头文件
 //----------------------------------------------------------------------------------------------
 #include <opencv2/opencv.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 
 //-----------------------------------【命名空间声明部分】--------------------------------------
 //      描述：包含程序所使用的命名空间
 //-----------------------------------------------------------------------------------------------
-using namespace std;
 using namespace cv;
+using namespace std;
 
+//-----------------------------------【宏定义部分】--------------------------------------------
+//  描述：定义一些辅助宏
+//------------------------------------------------------------------------------------------------
+#define WINDOW_NAME1 "【程序窗口1】"        //为窗口标题定义的宏
+#define WINDOW_NAME2 "【程序窗口2】"        //为窗口标题定义的宏
 
 //-----------------------------------【全局变量声明部分】--------------------------------------
 //      描述：全局变量声明
 //-----------------------------------------------------------------------------------------------
-Mat g_srcImage, g_dstImage,g_midImage;//原始图、中间图和效果图
-vector<Vec4i> g_lines;//定义一个矢量结构g_lines用于存放得到的线段矢量集合
-//变量接收的TrackBar位置参数
-int g_nthreshold=100;
+Mat g_srcImage, g_srcImage1,g_grayImage;
+int thresh = 30; //当前阈值
+int max_thresh = 175; //最大阈值
+
 
 //-----------------------------------【全局函数声明部分】--------------------------------------
 //      描述：全局函数声明
 //-----------------------------------------------------------------------------------------------
-
-static void on_HoughLines(int, void*);//回调函数
+void on_CornerHarris( int, void* );//回调函数
 static void ShowHelpText();
 
-
 //-----------------------------------【main( )函数】--------------------------------------------
-//      描述：控制台应用程序的入口函数，我们的程序从这里开始
+//      描述：控制台应用程序的入口函数，我们的程序从这里开始执行
 //-----------------------------------------------------------------------------------------------
-int main( )
+int main( int argc, char** argv )
 {
-    //改变console字体颜色
+    //【0】改变console字体颜色
     system("color 3F");
 
+    //【0】显示帮助文字
     ShowHelpText();
 
-    //载入原始图和Mat变量定义
-    Mat g_srcImage = imread("ShuDianXian2.jpg");  //工程目录下应该有一张名为1.jpg的素材图
+    //【1】载入原始图并进行克隆保存
+    g_srcImage = imread( "ShuDianXian2.jpg", 1 );
+     if(!g_srcImage.data ) { printf("读取图片错误，请确定目录下是否有imread函数指定的图片存在~！ \n"); return false; }
+     imshow("原始图",g_srcImage);
+    g_srcImage1=g_srcImage.clone( );
 
-    //显示原始图
-    imshow("【原始图】", g_srcImage);
+    //【2】存留一张灰度图
+    cvtColor( g_srcImage1, g_grayImage, CV_BGR2GRAY );
 
-    //创建滚动条
-    namedWindow("【效果图】",1);
-    createTrackbar("值", "【效果图】",&g_nthreshold,200,on_HoughLines);
+    //【3】创建窗口和滚动条
+    namedWindow( WINDOW_NAME1, CV_WINDOW_AUTOSIZE );
+    createTrackbar( "阈值: ", WINDOW_NAME1, &thresh, max_thresh, on_CornerHarris );
 
-    //进行边缘检测和转化为灰度图
-    Canny(g_srcImage, g_midImage, 50, 200, 3);//进行一次canny边缘检测
-    cvtColor(g_midImage,g_dstImage, CV_GRAY2BGR);//转化边缘检测后的图为灰度图
-
-    //调用一次回调函数，调用一次HoughLinesP函数
-    on_HoughLines(g_nthreshold,0);
-    HoughLinesP(g_midImage, g_lines, 1, CV_PI/180, 80, 50, 10 );
-
-    //显示效果图
-    imshow("【效果图】", g_dstImage);
-
+    //【4】调用一次回调函数，进行初始化
+    on_CornerHarris( 0, 0 );
 
     waitKey(0);
-
-    return 0;
-
+    return(0);
 }
 
-
 //-----------------------------------【on_HoughLines( )函数】--------------------------------
-//      描述：【顶帽运算/黑帽运算】窗口的回调函数
+//      描述：回调函数
 //----------------------------------------------------------------------------------------------
-static void on_HoughLines(int, void*)
+
+void on_CornerHarris( int, void* )
 {
-    //定义局部变量储存全局变量
-     Mat dstImage=g_dstImage.clone();
-     Mat midImage=g_midImage.clone();
+    //---------------------------【1】定义一些局部变量-----------------------------
+    Mat dstImage;//目标图
+    Mat normImage;//归一化后的图
+    Mat scaledImage;//线性变换后的八位无符号整型的图
 
-     //调用HoughLinesP函数
-     vector<Vec4i> mylines;
-    HoughLinesP(midImage, mylines, 1, CV_PI/180, g_nthreshold+1, 50, 10 );
+    //---------------------------【2】初始化---------------------------------------
+    //置零当前需要显示的两幅图，即清除上一次调用此函数时他们的值
+    dstImage = Mat::zeros( g_srcImage.size(), CV_32FC1 );
+    g_srcImage1=g_srcImage.clone( );
 
-    //循环遍历绘制每一条线段
-    for( size_t i = 0; i < mylines.size(); i++ )
+    //---------------------------【3】正式检测-------------------------------------
+    //进行角点检测
+    cornerHarris( g_grayImage, dstImage, 2, 3, 0.04, BORDER_DEFAULT );
+
+    // 归一化与转换
+    normalize( dstImage, normImage, 0, 255, NORM_MINMAX, CV_32FC1, Mat() );
+    convertScaleAbs( normImage, scaledImage );//将归一化后的图线性变换成8位无符号整型
+
+    //---------------------------【4】进行绘制-------------------------------------
+    // 将检测到的，且符合阈值条件的角点绘制出来
+    for( int j = 0; j < normImage.rows ; j++ )
+    { for( int i = 0; i < normImage.cols; i++ )
     {
-        Vec4i l = mylines[i];
-        line( dstImage, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(23,180,55), 1, CV_AA);
+        if( (int) normImage.at<float>(j,i) > thresh+80 )
+        {
+            circle( g_srcImage1, Point( i, j ), 5,  Scalar(10,10,255), 2, 8, 0 );
+            circle( scaledImage, Point( i, j ), 5,  Scalar(0,10,255), 2, 8, 0 );
+        }
     }
-    //显示图像
-    imshow("【效果图】",dstImage);
+    }
+    //---------------------------【4】显示最终效果---------------------------------
+    imshow( WINDOW_NAME1, g_srcImage1 );
+    imshow( WINDOW_NAME2, scaledImage );
+
 }
 
 //-----------------------------------【ShowHelpText( )函数】----------------------------------
@@ -103,6 +120,7 @@ static void on_HoughLines(int, void*)
 static void ShowHelpText()
 {
     //输出一些帮助信息
+    printf("\n\n\n\t\t\t【欢迎来到Harris角点检测示例程序~】\n\n");
     printf("\n\n\n\t请调整滚动条观察图像效果~\n\n");
     printf("\n\n\t\t\t\t\t\t\t\t by浅墨"
         );
