@@ -17,10 +17,10 @@ Using OpenCV and machine learning to implement the unmanned fault diagnosis of E
 * Caffe(Deep learning framework by BAIR) http://caffe.berkeleyvision.org/
 * Detectron(FAIR's research platform for object detection research, implementing popular algorithms like Mask R-CNN and RetinaNet.) https://github.com/facebookresearch/Detectron.git
 * NVIDIA GPU CLOUD https://www.nvidia.com/zh-cn/gpu-cloud/
+* COCO datasets COCO数据集是微软团队获取的一个可以用来图像recognition+segmentation+captioning 数据集，其官方说明网址：http://mscoco.org/。
 
 ### 可能还会需要什么？
 
-* 一个高性能运算平台(公有云 or 高性能集群 or GPU)
 * 某个三维重建算法框架
 
 ### 所用到的博客资料
