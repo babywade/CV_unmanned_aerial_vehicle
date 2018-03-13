@@ -11,7 +11,7 @@ Using Opencv and machine learning to implement the unmanned fault diagnosis of E
 
 ### 需要准备什么？
 
-* OpenCV(开源计算机视觉库)[官网](https://github.com/Itseez/opencv)
+* OpenCV(开源计算机视觉库)[官网] https://github.com/Itseez/opencv
 * MinGW64, cmake, Code::Blocks以及某种人工智能框架(Tensorflow or caffe)
 * 输电线路巡检照片或者录像
 
