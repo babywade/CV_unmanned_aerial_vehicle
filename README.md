@@ -14,6 +14,9 @@ Using OpenCV and machine learning to implement the unmanned fault diagnosis of E
 * OpenCV(开源计算机视觉库)[官网] https://github.com/Itseez/opencv
 * MinGW64, cmake, Code::Blocks以及某种人工智能框架(Tensorflow or caffe)
 * 输电线路巡检照片或者录像
+* Caffe(Deep learning framework by BAIR) http://caffe.berkeleyvision.org/
+* Detectron(FAIR's research platform for object detection research, implementing popular algorithms like Mask R-CNN and RetinaNet.) https://github.com/facebookresearch/Detectron.git
+* NVIDIA GPU CLOUD https://www.nvidia.com/zh-cn/gpu-cloud/
 
 ### 可能还会需要什么？
 
