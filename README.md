@@ -19,3 +19,10 @@ Using Opencv and machine learning to implement the unmanned fault diagnosis of E
 
 * 一个高性能运算平台(公有云 or 高性能集群 or GPU)
 * 某个三维重建算法框架
+
+### 所用到的博客资料
+
+* OpenCV学习笔记大集锦
+https://www.cnblogs.com/yymn/articles/5074009.html
+* OpenCV入门教程by 浅墨 毛星云
+http://blog.csdn.net/column/details/opencv-tutorial.html
