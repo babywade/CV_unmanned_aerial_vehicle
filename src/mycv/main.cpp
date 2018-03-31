@@ -1,57 +1,19 @@
 #include <iostream>
-#include <cmath>
+#include <iomanip>
+#include <ctime>
+#include <chrono>
 
-using namespace std;
+int main()
+{
+    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+    std::time_t now_c = std::chrono::system_clock::to_time_t(now - std::chrono::hours(24));
+    std::cout << "24 hours ago, the time was "
+              << std::put_time(std::localtime(&now_c), "%F %T") << '\n';
 
-int main() {
-    int pro3[30], pro4[30];
-    for(int i = 0; i < 30; i++) {
-        pro3[i] = 0;
-        pro4[i] = 0;
-    }
-    int sum = 0;
-
-    for(int i = 1; i <= 6; i++) {
-        sum += i;
-        for(int j = 1; j <= 6; j++) {
-            sum += j;
-            for(int k = 1; k <= 6; k++) {
-                sum += k;
-                ++pro3[sum];
-                sum = i + j;
-            }
-            sum = i;
-        }
-        sum = 0;
-    }
-    for(int i = 1; i <= 6; i++) {
-        sum += i;
-        for(int j = 1; j <= 6; j++) {
-            sum += j;
-            for(int k = 1; k <= 6; k++) {
-                sum += k;
-                for(int m = 1; m <= 6; m++) {
-                    sum += m;
-                    ++pro4[sum];
-                    sum = i + j + k;
-                }
-                sum = i + j;
-            }
-            sum = i;
-        }
-        sum = 0;
-    }
-
-    int cnt = 0;
-    for(int i = 18; i > 3 ; i--) {
-        sum = 0;
-        for(int j = i - 1; j > 1; j--) {
-            sum += pro4[j];
-        }
-        cnt += (pro3[i] * sum);
-    }
-    double all = pow(6.0, 7);
-    double result = cnt / all;
-    cout << "result: " << result << endl;
-    return 0;
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    std::cout << "Hello World\n";
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Printing took "
+              << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()
+              << "us.\n";
 }
