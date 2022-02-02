@@ -1,7 +1,8 @@
 # CV_unmanned_aerial_vehicle
+
 Using OpenCV and machine learning to implement the unmanned fault diagnosis of Electrical Equipment.
 
-***
+---
 
 ### 要做的工作是什么？
 
@@ -26,6 +27,9 @@ Using OpenCV and machine learning to implement the unmanned fault diagnosis of E
 ### 所用到的博客资料
 
 * OpenCV学习笔记大集锦
-https://www.cnblogs.com/yymn/articles/5074009.html
+  https://www.cnblogs.com/yymn/articles/5074009.html
 * OpenCV入门教程by 浅墨 毛星云
-http://blog.csdn.net/column/details/opencv-tutorial.html
+  http://blog.csdn.net/column/details/opencv-tutorial.html
+
+### 20220202更新
+* 因浅墨去世，触动很大，决定重新整理此四年未动的项目
